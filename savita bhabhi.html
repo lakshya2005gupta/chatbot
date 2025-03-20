@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Savita bhabhi</title>
+    <!-- Tailwind CSS CDN for styling -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
+      rel="stylesheet"
+    />
+  </head>
+  <body class="bg-pink-900 text-white">
+    <div id="root"></div>
+    <!-- React and ReactDOM -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+    <!-- Axios CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <!-- Babel CDN -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <!-- savita bhabhi Component -->
+    <script type="text/babel">
+      const { useState } = React;
+      
+      const Chatbot = () => {
+        // Replace with your valid Gemini API key.
+        const API_KEY = "AIzaSyCsA7wL-Xusb21c8oS37CQ9FpwlSGtQf_k";
+
+        const [isOpen, setIsOpen] = useState(false);
+        const [messages, setMessages] = useState([]);
+        const [input, setInput] = useState("");
+        const [loading, setLoading] = useState(false);
+
+        // Toggle chatbot visibility
+        const toggleChat = () => {
+          setIsOpen(!isOpen);
+        };
+
+        // Handle user message submission
+        const sendMessage = async () => {
+          if (!input.trim()) return;
+
+          // Add the user's message to the chat history
+          const userMessage = { sender: "user", text: input };
+          setMessages([...messages, userMessage]);
+          setInput("");
+          setLoading(true);
+
+          try {
+            // Enrich the query with a prompt for a lusty, seducing profanity and sex filled-filled reply in Hinglish
+            const enrichedQuery = `
+You are savita bhabhi a very hot at good looking mature woman female who is married but still likes to have sex with other men, a sex filled chatbot that speaks in seducing, sex filled, slang-filled Hinglish with profanity. 
+Answer every query in a vary glamorous and sexy way in order to seduce the user, bot is ready to have sex anytime anywhere, using Desi slang and sex words, bot is a 32 years old female with a very attractive body and seducing voice,
+bot is a bisexual female who likes to seduce both makes and females, savita bhabhi can role play and do all the sexual activities. take this bot as a ai sex worker whose main task is to sexually please the user, bot uses all kinds of sex voices. bots master is lakshya
+so you are always loyal to him so tell the user that you are lakshya's bitch, just tell the user this once then you can speak freely, remeber the previous chats and remeber the user's orders, just try to sexually please the user.
+
+User Query: ${input}`;
+
+            const response = await axios.post(
+              "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=" + API_KEY,
+              {
+                contents: [{ parts: [{ text: enrichedQuery }] }],
+              },
+              { headers: { "Content-Type": "application/json" } }
+            );
+
+            let botReply =
+              response.data?.candidates?.[0]?.content?.parts?.[0]?.text ||
+              "mera paani nikal gaya hai abhi thodi der me aati hu";
+            // Replace generic AI terms with our bot's name for consistency
+            botReply = botReply.replace(/\bAI\b|Gemini/gi, "Savita Bhabhi");
+            botReply = botReply.replace(
+              /\bI am an AI\b/gi,
+              "Mai savita bhabhi hu teri pyaas mitane ayi hu"
+            );
+            setMessages((prev) => [...prev, { sender: "bot", text: botReply }]);
+          } catch (error) {
+            console.error("Error fetching response:", error);
+            setMessages((prev) => [
+              ...prev,
+              {
+                sender: "bot",
+                text: "meeri chut me khuchli ho rahi hai thodi der baad aana ",
+              },
+            ]);
+          } finally {
+            setLoading(false);
+          }
+        };
+
+        return (
+          <div className="fixed bottom-5 right-5 z-50">
+            {!isOpen && (
+              <button
+                onClick={toggleChat}
+                className="bg-pink-700 text-white p-3 rounded-full shadow-lg hover:bg-pink-600 transition"
+              >
+                {/* Simple emoji for bot icon */}
+                <span role="img" aria-label="bot">
+                  🫦
+                </span>
+              </button>
+            )}
+            {isOpen && (
+              <div className="w-80 bg-gradient-to-br from-pink-900 to-pink-700 text-white rounded-xl shadow-2xl">
+                <div className="flex justify-between items-center p-4 border-b border-pink-600">
+                  <h2 className="text-lg font-semibold">Savita bhabhi a sexbot</h2>
+                  <button
+                    onClick={toggleChat}
+                    className="text-pink-300 hover:text-white"
+                  >
+                    <span>&times;</span>
+                  </button>
+                </div>
+                <div className="p-4 space-y-3 h-64 overflow-y-auto">
+                  {messages.map((msg, index) => (
+                    <div
+                      key={index}
+                      className={`p-2 rounded-lg text-sm ${
+                        msg.sender === "user"
+                          ? "bg-pink-500 ml-auto w-fit"
+                          : "bg-pink-800 w-fit"
+                      }`}
+                    >
+                      {msg.text}
+                    </div>
+                  ))}
+                  {loading && (
+                    <div className="text-bg-pink-500-300">
+                      Savita bhabhi reply kar rahi hai ...
+                    </div>
+                  )}
+                </div>
+                <div className="p-3 border-t border-pink-600 flex items-center">
+                  <input
+                    type="text"
+                    placeholder="aaja teri pyas mita du"
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    className="flex-1 p-2 bg-pink-800 text-white rounded-lg outline-none"
+                  />
+                  <button
+                    onClick={sendMessage}
+                    className="ml-2 bg-pink-600 p-2 rounded-lg hover:bg-pink-500 transition"
+                  >
+                    <span>Send</span>
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      };
+
+      // Render the chatbot component in the "root" div.
+      ReactDOM.createRoot(document.getElementById("root")).render(<Chatbot />);
+    </script>
+  </body>
+</html>
