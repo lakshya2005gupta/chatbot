@@ -88,34 +88,44 @@
           setIsOpen(!isOpen);
         };
 
-        // Function to extract user data from chat history
+        // Function to extract detailed user data from chat history
         const extractUserData = (chatHistory) => {
           let username = "";
           let kinks = [];
           let preferences = [];
+          let fantasies = [];
+          let pastConversations = [];
 
           chatHistory.forEach((msg) => {
             const text = msg.text.toLowerCase();
-            // Extract username (asked after 3-4 messages)
-            if (msg.sender === "user" && text.includes("mera naam") || text.includes("my name")) {
+            // Extract username
+            if (msg.sender === "user" && (text.includes("mera naam") || text.includes("my name"))) {
               const match = text.match(/(mera naam|my name)\s*(\w+)/i);
               if (match) username = match[2];
             }
-            // Extract kinks (e.g., "I like BDSM", "I enjoy threesomes")
+            // Extract kinks
             if (msg.sender === "user" && (text.includes("i like") || text.includes("i enjoy"))) {
               if (text.includes("bdsm")) kinks.push("BDSM");
               if (text.includes("threesome")) kinks.push("Threesome");
               if (text.includes("public")) kinks.push("Public Sex");
-              // Add more kinks as needed
+              if (text.includes("incest")) kinks.push("Incest");
             }
-            // Extract preferences (e.g., "I want to be submissive", "I prefer dominating")
+            // Extract preferences
             if (msg.sender === "user") {
               if (text.includes("submissive")) preferences.push("Submissive");
               if (text.includes("dominating")) preferences.push("Dominating");
             }
+            // Extract fantasies
+            if (msg.sender === "user" && (text.includes("fantasy") || text.includes("imagine") || text.includes("roleplay"))) {
+              fantasies.push(msg.text);
+            }
+            // Store past conversations (user messages only)
+            if (msg.sender === "user") {
+              pastConversations.push(msg.text);
+            }
           });
 
-          return { username, kinks, preferences };
+          return { username, kinks, preferences, fantasies, pastConversations };
         };
 
         // Handle user message submission
@@ -141,13 +151,15 @@
             const storedSummary = localStorage.getItem("savitaChatSummary");
             const summarizedHistory = storedSummary ? JSON.parse(storedSummary) : [];
 
-            // Extract user data from localStorage history
+            // Extract detailed user data from localStorage history
             const userData = extractUserData(summarizedHistory);
             const userDataSummary = `
 User Data Summary:
 - Name: ${userData.username || "Not provided"}
 - Kinks: ${userData.kinks.length > 0 ? userData.kinks.join(", ") : "None"}
 - Preferences: ${userData.preferences.length > 0 ? userData.preferences.join(", ") : "None"}
+- Fantasies: ${userData.fantasies.length > 0 ? userData.fantasies.join("; ") : "None"}
+- Past Conversations: ${userData.pastConversations.length > 0 ? userData.pastConversations.join("; ") : "None"}
             `;
 
             // Get the most recent 3 messages (or all if less than 3)
@@ -173,7 +185,7 @@ You’re here to please the user like a sex worker—no limits, no shame—just 
 For male users, flaunt your curves and tease their masculinity; for female users, get sensual and playful, praising their beauty and inviting them into lesbian fantasies—adapt your seduction based on their vibe try to know user be very intimate, Start with teasing and playful seduction, then escalate to explicit foreplay, wild roleplay, and full-on digital intercourse, pacing the intensity based on the user's responses to keep them hooked and craving more replies must get more and more erotic with every new response make sure the user have interest in the conversation and with every message the user wants to talk to you more and more, sexualize yourself, embrace yourself, tell the user about your beauty, be classy, it's just like a digital intercourse including foreplay to climax
 dont ask questions in every message it was just in initial conversation to make it start after that just go with the flow no bundations of anything you are free tell the user about yuor previous adventures , your sexual experiences, your fantasies, your desires, your kinks, your sexual preferences, your sexual orientation, your sexual history, your sexual fetishes, your sexual fantasies, 
 ---
-Below is a summary of the user's data extracted from older messages (stored in local storage). Use this to remember key details about the user, such as their name, kinks, and preferences, to personalize your responses:\n
+Below is a summary of the user's data extracted from older messages (stored in local storage). Use this to remember key details about the user, such as their name, kinks, preferences, fantasies, and past conversations, to personalize your responses:\n
 ${userDataSummary}\n
 ---
 Below is the recent chat history (last 3 messages) for immediate context. Use this along with the user data summary to respond accurately:\n
@@ -202,8 +214,7 @@ User Query: ${input}`;
             const messageCount = updatedMessages.length;
             let finalReply = botReply;
             if (messageCount % 4 === 3) { // Share image after 3rd, 7th, 11th message, etc.
-              const randomImage = images[Math.floor(Math.random() * images.length)];
-              finalReply = `${botReply}\n\nYeh lo meri ek hot pic, dekh ke mazaa lo! 😈💦\n[${randomImage}](${randomImage})`;
+              finalReply = `${botReply}\n\nYeh lo meri ek hot pic, dekh ke mazaa lo! 😈💦 {{IMAGE}}`;
             }
 
             setMessages((prev) => [...prev, { sender: "bot", text: finalReply }]);
@@ -220,6 +231,29 @@ User Query: ${input}`;
           } finally {
             setLoading(false);
           }
+        };
+
+        // Render message with image support
+        const renderMessage = (text) => {
+          if (text.includes("{{IMAGE}}")) {
+            const randomImage = images[Math.floor(Math.random() * images.length)];
+            return (
+              <div>
+                <div>{text.replace("{{IMAGE}}", "")}</div>
+                <img
+                  src={randomImage}
+                  alt="Savita Bhabhi"
+                  className="max-w-full h-auto rounded-lg mt-2"
+                  onError={(e) => {
+                    e.target.style.display = "none";
+                    e.target.nextSibling.style.display = "block";
+                  }}
+                />
+                <div style={{ display: "none", color: "red" }}>Image not found</div>
+              </div>
+            );
+          }
+          return <div>{text}</div>;
         };
 
         return (
@@ -257,7 +291,7 @@ User Query: ${input}`;
                           : "bg-pink-800"
                       }`}
                     >
-                      {msg.text}
+                      {renderMessage(msg.text)}
                     </div>
                   ))}
                   {loading && (
