@@ -1,46 +1,47 @@
 <!DOCTYPE html>
 <html lang="en">
+<link rel="icon" href="data:;base64,iVBORw0KGgo=">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Savita Bhabhi</title>
-    <!-- Tailwind CSS CDN for styling -->
+    <!-- Tailwind CSS CDN -->
     <link
       href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
       rel="stylesheet"
     />
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js"></script>
     <style>
       /* Animation for chatbox opening */
       @keyframes slideIn {
-        from {
-          transform: translateY(100%);
-          opacity: 0;
-        }
-        to {
-          transform: translateY(0);
-          opacity: 1;
-        }
+        from { transform: translateY(100%); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
       }
       .chatbox-open {
         animation: slideIn 0.3s ease-out;
       }
-      /* Style for media previews */
+      /* Media previews */
       .media-preview {
-        max-width: 200px;
+        max-width: 100%;
         max-height: 200px;
         object-fit: cover;
         border-radius: 12px;
         margin-top: 10px;
         border: 2px solid #ff1493;
       }
-      /* Sexy vibe for chat container */
+      /* Chat container with sexy vibe */
       .chat-container {
         background: linear-gradient(135deg, #ff1493, #4b0082);
         border: 2px solid #ff69b4;
         box-shadow: 0 0 20px rgba(255, 105, 180, 0.8);
         max-height: 80vh;
+        width: 100%;
+        max-width: 400px;
       }
-      /* Typing indicator with sexy pulse */
+      /* Typing indicator */
       .typing-indicator {
         display: flex;
         align-items: center;
@@ -57,27 +58,14 @@
         border-radius: 50%;
         animation: pulse 1.5s infinite;
       }
-      .typing-dot:nth-child(2) {
-        animation-delay: 0.2s;
-      }
-      .typing-dot:nth-child(3) {
-        animation-delay: 0.4s;
-      }
+      .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+      .typing-dot:nth-child(3) { animation-delay: 0.4s; }
       @keyframes pulse {
-        0% {
-          transform: scale(1);
-          opacity: 1;
-        }
-        50% {
-          transform: scale(1.2);
-          opacity: 0.7;
-        }
-        100% {
-          transform: scale(1);
-          opacity: 1;
-        }
+        0% { transform: scale(1); opacity: 1; }
+        50% { transform: scale(1.2); opacity: 0.7; }
+        100% { transform: scale(1); opacity: 1; }
       }
-      /* Ensure chat area is scrollable and visible */
+      /* Scrollable chat area */
       .chat-area {
         overflow-y: auto;
         scrollbar-width: thin;
@@ -108,14 +96,7 @@
         background: rgba(75, 0, 130, 0.7);
         z-index: 10;
       }
-      /* Ensure parent container supports scrolling */
-      .chat-wrapper {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        overflow: hidden;
-      }
-      /* History dropdown styles */
+      /* History dropdown */
       .history-dropdown {
         position: relative;
         display: inline-block;
@@ -157,6 +138,27 @@
         width: 70%;
         outline: none;
       }
+      /* Mobile optimizations */
+      @media (max-width: 640px) {
+        .chat-container {
+          width: 100vw;
+          max-width: none;
+          height: 100vh;
+          max-height: none;
+          border-radius: 0;
+          bottom: 0;
+          right: 0;
+        }
+        .chat-area {
+          max-height: calc(100vh - 200px);
+        }
+        .input-area {
+          padding: 8px;
+        }
+        .media-preview {
+          max-width: 100%;
+        }
+      }
     </style>
   </head>
   <body class="bg-pink-900 text-white font-sans">
@@ -168,66 +170,108 @@
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <!-- Babel CDN -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-
+    <!-- Firebase Configuration -->
+    <script>
+      const firebaseConfig = {
+        apiKey: "AIzaSyBsOG1K6Ae9_5WTZqA_g7G1kuwD3GwBIiY",
+        authDomain: "savitabhabhichatbot.firebaseapp.com",
+        projectId: "savitabhabhichatbot",
+        storageBucket: "savitabhabhichatbot.firebasestorage.app",
+        messagingSenderId: "796299991776",
+        appId: "1:796299991776:web:b7223f94725fd98dface85",
+        measurementId: "G-KM7X0Y8VE2"
+      };
+      firebase.initializeApp(firebaseConfig);
+      const auth = firebase.auth();
+      const db = firebase.firestore();
+    </script>
     <!-- Savita Bhabhi Component -->
     <script type="text/babel">
       const { useState, useEffect, useRef } = React;
 
       const Chatbot = () => {
-        const API_KEY = "AIzaSyCOYc7t2YJVImjsu_wafO0ez3NLqx-1Xbc"; // Your API key
-
-        // State for messages, chat sessions, and media
+        const API_KEY = "AIAIzaSyCOYc7t2YJVImjsu_wafO0ez3NLqx-1Xbc"; // Replace with your API key
+        const [user, setUser] = useState(null);
         const [messages, setMessages] = useState([]);
         const [isOpen, setIsOpen] = useState(false);
         const [input, setInput] = useState("");
         const [loading, setLoading] = useState(false);
-        const [chatSessions, setChatSessions] = useState(() => {
-          const saved = localStorage.getItem("savitaChatSessions");
-          return saved ? JSON.parse(saved) : {};
-        });
+        const [chatSessions, setChatSessions] = useState({});
         const [currentSessionId, setCurrentSessionId] = useState(null);
         const [mediaFile, setMediaFile] = useState(null);
         const [editMessageId, setEditMessageId] = useState(null);
         const [editText, setEditText] = useState("");
-        const [sessionNames, setSessionNames] = useState(() => {
-          const saved = localStorage.getItem("savitaSessionNames");
-          return saved ? JSON.parse(saved) : {};
-        });
+        const [sessionNames, setSessionNames] = useState({});
+        const [isLogin, setIsLogin] = useState(true);
+        const [email, setEmail] = useState("");
+        const [password, setPassword] = useState("");
+        const [voice, setVoice] = useState("en-IN-Wavenet-A"); // Default voice
+        const [isListening, setIsListening] = useState(false);
         const chatAreaRef = useRef(null);
+        const recognitionRef = useRef(null);
 
-        // Save chat sessions and names to localStorage
+        // Firebase Auth state listener
         useEffect(() => {
-          localStorage.setItem("savitaChatSessions", JSON.stringify(chatSessions));
-          localStorage.setItem("savitaSessionNames", JSON.stringify(sessionNames));
-        }, [chatSessions, sessionNames]);
+          const unsubscribe = auth.onAuthStateChanged((user) => {
+            setUser(user);
+            if (user && currentSessionId) {
+              loadSessions(user.uid);
+            }
+          });
+          return () => unsubscribe();
+        }, [currentSessionId]);
 
-        // Handle scrolling: reset to top for new session, scroll to bottom for new messages
+        // Initialize Web Speech API
+        useEffect(() => {
+          if ("webkitSpeechRecognition" in window) {
+            recognitionRef.current = new window.webkitSpeechRecognition();
+            recognitionRef.current.continuous = false;
+            recognitionRef.current.interimResults = false;
+            recognitionRef.current.lang = "en-IN";
+            recognitionRef.current.onresult = (event) => {
+              const transcript = event.results[0][0].transcript;
+              setInput(transcript);
+              setIsListening(false);
+            };
+            recognitionRef.current.onend = () => setIsListening(false);
+          }
+        }, []);
+
+        // Load chat sessions from Firestore
+        const loadSessions = async (uid) => {
+          const sessionsSnap = await db.collection("users").doc(uid).collection("sessions").get();
+          const sessions = {};
+          const names = {};
+          sessionsSnap.forEach((doc) => {
+            sessions[doc.id] = doc.data();
+            names[doc.id] = doc.data().name || `Session ${new Date(doc.data().createdAt).toLocaleString()}`;
+          });
+          setChatSessions(sessions);
+          setSessionNames(names);
+          if (!currentSessionId && Object.keys(sessions).length > 0) {
+            const latestSession = Object.keys(sessions)[0];
+            setCurrentSessionId(latestSession);
+            setMessages(sessions[latestSession].messages || []);
+          }
+        };
+
+        // Scroll to bottom of chat
         useEffect(() => {
           if (isOpen && chatAreaRef.current) {
             const chatArea = chatAreaRef.current;
-            chatArea.style.overflowY = 'auto';
-            if (chatArea.scrollHeight > chatArea.clientHeight) {
-              chatArea.style.overflowY = 'scroll';
-            }
-            setTimeout(() => {
-              if (!currentSessionId || messages.length === 0) {
-                chatArea.scrollTop = 0;
-              } else {
-                chatArea.scrollTop = chatArea.scrollHeight;
-              }
-            }, 100);
+            chatArea.scrollTop = chatArea.scrollHeight;
           }
-        }, [isOpen, currentSessionId, messages, loading]);
+        }, [isOpen, messages, loading]);
 
         // Toggle chatbot visibility
         const toggleChat = () => {
           setIsOpen(!isOpen);
-          if (!isOpen && !currentSessionId) {
+          if (!isOpen && !currentSessionId && user) {
             startNewSession();
           }
         };
 
-        // Generate a unique session name based on content or default
+        // Generate session name
         const generateSessionName = (messages) => {
           if (messages.length > 0) {
             const firstMessage = messages[0].text.slice(0, 20).trim();
@@ -236,13 +280,20 @@
           return `Savita Ki Baat ${Date.now()}`;
         };
 
-        // Start a new chat session
-        const startNewSession = () => {
+        // Start new session
+        const startNewSession = async () => {
+          if (!user) return;
           const newSessionId = Date.now().toString();
           const newSessionName = generateSessionName([]);
+          const newSession = {
+            messages: [],
+            createdAt: new Date().toISOString(),
+            name: newSessionName,
+          };
+          await db.collection("users").doc(user.uid).collection("sessions").doc(newSessionId).set(newSession);
           setChatSessions((prev) => ({
             ...prev,
-            [newSessionId]: { messages: [], createdAt: new Date().toISOString() },
+            [newSessionId]: newSession,
           }));
           setSessionNames((prev) => ({
             ...prev,
@@ -252,23 +303,44 @@
           setMessages([]);
         };
 
-        // Load a previous chat session
-        const loadSession = (sessionId) => {
+        // Load session
+        const loadSession = async (sessionId) => {
           setCurrentSessionId(sessionId);
           setMessages(chatSessions[sessionId]?.messages || []);
           setEditMessageId(null);
         };
 
-        // Rename a session
-        const renameSession = (sessionId, newName) => {
-          if (!newName.trim()) return;
+        // Rename session
+        const renameSession = async (sessionId, newName) => {
+          if (!newName.trim() || !user) return;
+          await db.collection("users").doc(user.uid).collection("sessions").doc(sessionId).update({ name: newName });
           setSessionNames((prev) => ({
             ...prev,
             [sessionId]: newName,
           }));
         };
 
-        // Handle media file selection
+        // Delete session
+        const deleteSession = async (sessionId) => {
+          if (!user) return;
+          await db.collection("users").doc(user.uid).collection("sessions").doc(sessionId).delete();
+          setChatSessions((prev) => {
+            const updated = { ...prev };
+            delete updated[sessionId];
+            return updated;
+          });
+          setSessionNames((prev) => {
+            const updated = { ...prev };
+            delete updated[sessionId];
+            return updated;
+          });
+          if (currentSessionId === sessionId) {
+            setCurrentSessionId(null);
+            setMessages([]);
+          }
+        };
+
+        // Handle media upload
         const handleMediaUpload = (e) => {
           const file = e.target.files[0];
           if (file && (file.type.startsWith("image/") || file.type.startsWith("video/"))) {
@@ -276,9 +348,31 @@
           }
         };
 
-        // Handle user message submission
+        // Handle voice input
+        const toggleVoiceInput = () => {
+          if (isListening) {
+            recognitionRef.current.stop();
+          } else {
+            recognitionRef.current.start();
+            setIsListening(true);
+          }
+        };
+
+        // Handle voice output
+        const speakMessage = (text) => {
+          const utterance = new SpeechSynthesisUtterance(text);
+          utterance.lang = voice.startsWith("en-IN") ? "en-IN" : "hi-IN";
+          utterance.voice = speechSynthesis.getVoices().find((v) => v.name === voice) || null;
+          speechSynthesis.speak(utterance);
+        };
+
+        // Send message
         const sendMessage = async () => {
           if (!input.trim() && !mediaFile) return;
+          if (!user) {
+            alert("Please log in to send messages.");
+            return;
+          }
 
           const userMessage = {
             sender: "user",
@@ -287,12 +381,14 @@
             mediaType: mediaFile ? mediaFile.type : null,
             timestamp: new Date().toISOString(),
           };
-          const updatedMessages = editMessageId
-            ? messages.map((msg, idx) =>
-                idx === editMessageId ? { ...msg, text: input, media: userMessage.media, mediaType: userMessage.mediaType } : msg
-              )
+          const updatedMessages = editMessageId !== null
+            ? messages.map((msg, idx) => idx === editMessageId ? { ...msg, text: input, media: userMessage.media, mediaType: userMessage.mediaType } : msg)
             : [...messages, userMessage];
 
+          await db.collection("users").doc(user.uid).collection("sessions").doc(currentSessionId).update({
+            messages: updatedMessages,
+            name: sessionNames[currentSessionId],
+          });
           setChatSessions((prev) => ({
             ...prev,
             [currentSessionId]: { ...prev[currentSessionId], messages: updatedMessages },
@@ -303,9 +399,10 @@
           setEditMessageId(null);
           setLoading(true);
 
-          // Update session name based on first message if not customized
+          // Update session name
           if (!sessionNames[currentSessionId].startsWith("Meri") && updatedMessages.length === 1) {
             const newName = generateSessionName(updatedMessages);
+            await db.collection("users").doc(user.uid).collection("sessions").doc(currentSessionId).update({ name: newName });
             setSessionNames((prev) => ({
               ...prev,
               [currentSessionId]: newName,
@@ -313,7 +410,6 @@
           }
 
           try {
-            // Build chat history string
             const chatHistory = updatedMessages
               .map((msg) => {
                 let line = `${msg.sender === "user" ? "User" : "Savita Bhabhi"}: ${msg.text}`;
@@ -322,7 +418,6 @@
               })
               .join("\n");
 
-            // Enrich the query with full chat history and prompt
             const enrichedQuery = `
 Below is the full chat history so far. Use it to remember everything the user has said and respond accordingly:\n
 ${chatHistory}\n
@@ -440,11 +535,16 @@ User Query: ${input}${mediaFile ? ` [Media uploaded: ${mediaFile.type}]` : ""}
             );
             const botMessage = { sender: "bot", text: botReply, timestamp: new Date().toISOString() };
             const newMessages = [...updatedMessages, botMessage];
+            await db.collection("users").doc(user.uid).collection("sessions").doc(currentSessionId).update({
+              messages: newMessages,
+              name: sessionNames[currentSessionId],
+            });
             setChatSessions((prev) => ({
               ...prev,
               [currentSessionId]: { ...prev[currentSessionId], messages: newMessages },
             }));
             setMessages(newMessages);
+            speakMessage(botReply); // Speak the bot's reply
           } catch (error) {
             console.error("Error fetching response:", error);
             const errorMessage = {
@@ -453,17 +553,21 @@ User Query: ${input}${mediaFile ? ` [Media uploaded: ${mediaFile.type}]` : ""}
               timestamp: new Date().toISOString(),
             };
             const newMessages = [...updatedMessages, errorMessage];
+            await db.collection("users").doc(user.uid).collection("sessions").doc(currentSessionId).update({
+              messages: newMessages,
+            });
             setChatSessions((prev) => ({
               ...prev,
               [currentSessionId]: { ...prev[currentSessionId], messages: newMessages },
             }));
             setMessages(newMessages);
+            speakMessage(errorMessage.text);
           } finally {
             setLoading(false);
           }
         };
 
-        // Edit a previous message
+        // Edit message
         const editMessage = (index, text) => {
           setEditMessageId(index);
           setEditText(text);
@@ -477,163 +581,235 @@ User Query: ${input}${mediaFile ? ` [Media uploaded: ${mediaFile.type}]` : ""}
           setInput("");
         };
 
+        // Handle login/signup
+        const handleAuth = async () => {
+          try {
+            if (isLogin) {
+              await auth.signInWithEmailAndPassword(email, password);
+            } else {
+              await auth.createUserWithEmailAndPassword(email, password);
+            }
+            setEmail("");
+            setPassword("");
+          } catch (error) {
+            alert(error.message);
+          }
+        };
+
+        // Handle logout
+        const handleLogout = async () => {
+          await auth.signOut();
+          setUser(null);
+          setChatSessions({});
+          setSessionNames({});
+          setCurrentSessionId(null);
+          setMessages([]);
+        };
+
+        // Voice selection
+        const availableVoices = [
+          { value: "en-IN-Wavenet-A", label: "English Female (Sultry)" },
+          { value: "en-IN-Wavenet-B", label: "English Male (Deep)" },
+          { value: "hi-IN-Wavenet-A", label: "Hindi Female (Flirty)" },
+          { value: "hi-IN-Wavenet-B", label: "Hindi Male (Husky)" },
+        ];
+
         return (
-          <div className="fixed bottom-5 right-5 z-50">
-            {!isOpen && (
-              <button
-                onClick={toggleChat}
-                className="bg-pink-700 text-white p-5 rounded-full shadow-lg hover:bg-pink-600 transition transform hover:scale-105"
-              >
-                <span role="img" aria-label="bot" className="text-3xl">
-                  💋
-                </span>
-              </button>
-            )}
-            {isOpen && (
-              <div
-                className="fixed bottom-5 right-5 w-[90vw] max-w-[400px] h-[80vh] chat-container text-white rounded-2xl shadow-2xl flex flex-col chatbox-open"
-              >
-                <div className="flex justify-between items-center p-4 border-b border-pink-500">
-                  <h2 className="text-xl font-semibold text-pink-200">Savita Bhabhi - Sexbot</h2>
-                  <button
-                    onClick={toggleChat}
-                    className="text-pink-300 hover:text-white text-2xl"
-                  >
-                    <span>×</span>
-                  </button>
-                </div>
-                <div className="chat-wrapper">
-                  <div className="p-4 flex flex-wrap gap-2">
-                    <button
-                      onClick={startNewSession}
-                      className="bg-pink-600 p-2 rounded-lg hover:bg-pink-500 transition text-sm"
-                    >
-                      Naya Session
-                    </button>
-                    <div className="history-dropdown">
-                      <button
-                        className="bg-pink-800 p-2 rounded-lg hover:bg-pink-700 transition text-sm"
-                      >
-                        History
-                      </button>
-                      <div className="history-content">
-                        {Object.keys(chatSessions).map((sessionId) => (
-                          <div key={sessionId} className="history-item">
-                            <button
-                              onClick={() => loadSession(sessionId)}
-                              className={`text-sm ${
-                                currentSessionId === sessionId
-                                  ? "text-pink-300"
-                                  : "text-white hover:text-pink-200"
-                              }`}
-                            >
-                              {sessionNames[sessionId] || `Session ${new Date(chatSessions[sessionId].createdAt).toLocaleString()}`}
-                            </button>
-                            <input
-                              type="text"
-                              className="history-input"
-                              defaultValue={sessionNames[sessionId] || new Date(chatSessions[sessionId].createdAt).toLocaleString()}
-                              onBlur={(e) => renameSession(sessionId, e.target.value)}
-                              onKeyPress={(e) => {
-                                if (e.key === "Enter") renameSession(sessionId, e.target.value);
-                              }}
-                            />
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                  <div
-                    ref={chatAreaRef}
-                    className="chat-area space-y-4 p-4"
-                  >
-                    {messages.map((msg, index) => (
-                      <div
-                        key={index}
-                        className={`p-3 rounded-xl text-sm max-w-[80%] ${
-                          msg.sender === "user"
-                            ? "bg-pink-600 ml-auto"
-                            : "bg-indigo-900"
-                        } shadow-md`}
-                      >
-                        <div>{msg.text}</div>
-                        {msg.media && (
-                          msg.mediaType.startsWith("image/") ? (
-                            <img
-                              src={msg.media}
-                              alt="User upload"
-                              className="media-preview"
-                            />
-                          ) : (
-                            <video
-                              src={msg.media}
-                              controls
-                              className="media-preview"
-                            />
-                          )
-                        )}
-                        <div className="text-xs text-pink-300 mt-2">
-                          {new Date(msg.timestamp).toLocaleTimeString()}
-                          {msg.sender === "user" && (
-                            <button
-                              onClick={() => editMessage(index, msg.text)}
-                              className="ml-2 text-pink-200 hover:text-white"
-                            >
-                              Edit
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                    {loading && (
-                      <div className="typing-indicator max-w-[80%]">
-                        <span className="text-pink-200">Savita Bhabhi reply kar rahi hai</span>
-                        <div className="typing-dot"></div>
-                        <div className="typing-dot"></div>
-                        <div className="typing-dot"></div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-                <div className="p-4 border-t border-pink-500 flex items-center gap-2 input-area">
+          <div className="fixed bottom-5 right-5 z-50 w-full sm:w-auto">
+            {!user ? (
+              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+                <div className="bg-pink-900 p-6 rounded-2xl w-full max-w-md">
+                  <h2 className="text-2xl text-pink-200 mb-4">{isLogin ? "Login" : "Sign Up"}</h2>
                   <input
-                    type="file"
-                    accept="image/*,video/*"
-                    onChange={handleMediaUpload}
-                    className="text-pink-200 text-sm"
+                    type="email"
+                    placeholder="Email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full p-3 mb-4 bg-pink-800 text-white rounded-xl border border-pink-500 focus:border-pink-300"
                   />
                   <input
-                    type="text"
-                    placeholder="aaja teri pyas mita du"
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    onKeyPress={(e) => {
-                      if (e.key === "Enter") sendMessage();
-                    }}
-                    className="flex-1 p-3 bg-pink-800 text-white rounded-xl outline-none border border-pink-500 focus:border-pink-300 focus:ring-2 focus:ring-pink-300"
+                    type="password"
+                    placeholder="Password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full p-3 mb-4 bg-pink-800 text-white rounded-xl border border-pink-500 focus:border-pink-300"
                   />
                   <button
-                    onClick={sendMessage}
-                    className="bg-pink-600 p-3 rounded-xl hover:bg-pink-500 transition text-sm"
+                    onClick={handleAuth}
+                    className="w-full bg-pink-600 p-3 rounded-xl hover:bg-pink-500 transition"
                   >
-                    <span>{editMessageId !== null ? "Update" : "Send"}</span>
+                    {isLogin ? "Login" : "Sign Up"}
                   </button>
-                  {editMessageId !== null && (
-                    <button
-                      onClick={cancelEdit}
-                      className="bg-pink-700 p-3 rounded-xl hover:bg-pink-600 transition text-sm"
-                    >
-                      Cancel
-                    </button>
-                  )}
+                  <button
+                    onClick={() => setIsLogin(!isLogin)}
+                    className="w-full text-pink-300 mt-2 hover:text-white"
+                  >
+                    {isLogin ? "Need an account? Sign Up" : "Already have an account? Login"}
+                  </button>
                 </div>
               </div>
+            ) : (
+              <>
+                {!isOpen && (
+                  <button
+                    onClick={toggleChat}
+                    className="bg-pink-700 text-white p-5 rounded-full shadow-lg hover:bg-pink-600 transition transform hover:scale-105"
+                  >
+                    <span role="img" aria-label="bot" className="text-3xl">💋</span>
+                  </button>
+                )}
+                {isOpen && (
+                  <div className="chat-container text-white rounded-2xl shadow-2xl flex flex-col sm:max-w-[400px] w-full">
+                    <div className="flex justify-between items-center p-4 border-b border-pink-500">
+                      <h2 className="text-xl font-semibold text-pink-200">Savita Bhabhi - Sexbot</h2>
+                      <div className="flex items-center gap-2">
+                        <select
+                          value={voice}
+                          onChange={(e) => setVoice(e.target.value)}
+                          className="bg-pink-800 text-white p-2 rounded-lg text-sm"
+                        >
+                          {availableVoices.map((v) => (
+                            <option key={v.value} value={v.value}>{v.label}</option>
+                          ))}
+                        </select>
+                        <button
+                          onClick={toggleChat}
+                          className="text-pink-300 hover:text-white text-2xl"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    </div>
+                    <div className="chat-wrapper">
+                      <div className="p-4 flex flex-wrap gap-2">
+                        <button
+                          onClick={startNewSession}
+                          className="bg-pink-600 p-2 rounded-lg hover:bg-pink-500 transition text-sm"
+                        >
+                          Naya Session
+                        </button>
+                        <div className="history-dropdown">
+                          <button className="bg-pink-800 p-2 rounded-lg hover:bg-pink-700 transition text-sm">
+                            History
+                          </button>
+                          <div className="history-content">
+                            {Object.keys(chatSessions).map((sessionId) => (
+                              <div key={sessionId} className="history-item">
+                                <button
+                                  onClick={() => loadSession(sessionId)}
+                                  className={`text-sm ${currentSessionId === sessionId ? "text-pink-300" : "text-white hover:text-pink-200"}`}
+                                >
+                                  {sessionNames[sessionId]}
+                                </button>
+                                <input
+                                  type="text"
+                                  className="history-input"
+                                  defaultValue={sessionNames[sessionId]}
+                                  onBlur={(e) => renameSession(sessionId, e.target.value)}
+                                  onKeyPress={(e) => {
+                                    if (e.key === "Enter") renameSession(sessionId, e.target.value);
+                                  }}
+                                />
+                                <button
+                                  onClick={() => deleteSession(sessionId)}
+                                  className="text-red-500 hover:text-red-400 text-sm"
+                                >
+                                  Delete
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                        <button
+                          onClick={handleLogout}
+                          className="bg-red-600 p-2 rounded-lg hover:bg-red-500 transition text-sm"
+                        >
+                          Logout
+                        </button>
+                      </div>
+                      <div ref={chatAreaRef} className="chat-area space-y-4 p-4">
+                        {messages.map((msg, index) => (
+                          <div
+                            key={index}
+                            className={`p-3 rounded-xl text-sm max-w-[80%] ${msg.sender === "user" ? "bg-pink-600 ml-auto" : "bg-indigo-900"} shadow-md`}
+                          >
+                            <div>{msg.text}</div>
+                            {msg.media && (
+                              msg.mediaType.startsWith("image/") ? (
+                                <img src={msg.media} alt="User upload" className="media-preview" />
+                              ) : (
+                                <video src={msg.media} controls className="media-preview" />
+                              )
+                            )}
+                            <div className="text-xs text-pink-300 mt-2">
+                              {new Date(msg.timestamp).toLocaleTimeString()}
+                              {msg.sender === "user" && (
+                                <button
+                                  onClick={() => editMessage(index, msg.text)}
+                                  className="ml-2 text-pink-200 hover:text-white"
+                                >
+                                  Edit
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                        {loading && (
+                          <div className="typing-indicator max-w-[80%]">
+                            <span className="text-pink-200">Savita Bhabhi reply kar rahi hai</span>
+                            <div className="typing-dot"></div>
+                            <div className="typing-dot"></div>
+                            <div className="typing-dot"></div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <div className="p-4 border-t border-pink-500 flex items-center gap-2 input-area">
+                      <input
+                        type="file"
+                        accept="image/*,video/*"
+                        onChange={handleMediaUpload}
+                        className="text-pink-200 text-sm"
+                      />
+                      <input
+                        type="text"
+                        placeholder="aaja teri pyas mita du"
+                        value={input}
+                        onChange={(e) => setInput(e.target.value)}
+                        onKeyPress={(e) => {
+                          if (e.key === "Enter") sendMessage();
+                        }}
+                        className="flex-1 p-3 bg-pink-800 text-white rounded-xl outline-none border border-pink-500 focus:border-pink-300 focus:ring-2 focus:ring-pink-300"
+                      />
+                      <button
+                        onClick={toggleVoiceInput}
+                        className={`p-3 rounded-xl transition text-sm ${isListening ? "bg-red-600 hover:bg-red-500" : "bg-pink-600 hover:bg-pink-500"}`}
+                      >
+                        {isListening ? "Stop Mic" : "Mic"}
+                      </button>
+                      <button
+                        onClick={sendMessage}
+                        className="bg-pink-600 p-3 rounded-xl hover:bg-pink-500 transition text-sm"
+                      >
+                        {editMessageId !== null ? "Update" : "Send"}
+                      </button>
+                      {editMessageId !== null && (
+                        <button
+                          onClick={cancelEdit}
+                          className="bg-pink-700 p-3 rounded-xl hover:bg-pink-600 transition text-sm"
+                        >
+                          Cancel
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </>
             )}
           </div>
         );
       };
 
-      // Render the chatbot component in the "root" div
       ReactDOM.createRoot(document.getElementById("root")).render(<Chatbot />);
     </script>
   </body>
